@@ -7,6 +7,7 @@ import torch
 
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
+from lib.categories import categories
 from lib import utils
 import random
 import time
@@ -158,7 +159,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
             # 获取图片名和预测标签并写入 CSV
             for i in range(len(images)):
                 img_name = data_loader.dataset.samples[i][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
-                predicted_label = pred[i]
+                predicted_label = categories[pred[i]]
                 writer.writerow([img_name, predicted_label])
 
             acc1, acc5 = accuracy(output, target, topk=(1, 5))

@@ -5,6 +5,7 @@ def generate_class_ids(dataset_root, output_file):
     # 定义输出文件
     with open(output_file, "w") as out_file:
 
+        res = {}
 
         # 遍历主目录中的类别文件夹
         class_id = 0
@@ -12,6 +13,9 @@ def generate_class_ids(dataset_root, output_file):
             category_path = os.path.join(dataset_root, category)
             if not os.path.isdir(category_path):
                 continue  # 如果不是文件夹，跳过
+
+            res[class_id] = category
+
 
 
             for image_name in sorted(os.listdir(category_path)):
@@ -23,6 +27,8 @@ def generate_class_ids(dataset_root, output_file):
 
             # 更新 Class ID
             class_id += 1
+
+    print(res)
 
 
 # 设置数据集根目录和输出文件路径
