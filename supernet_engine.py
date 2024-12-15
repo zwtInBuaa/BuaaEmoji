@@ -137,7 +137,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
     parameters = model_module.get_sampled_params_numel(config)
     print("sampled model parameters: {}".format(parameters))
 
-    output_csv_path = "prediction_results.csv"
+    output_csv_path = "submission.csv"
     number = 0
     with open(output_csv_path, mode='w', newline='') as f:
         writer = csv.writer(f)
