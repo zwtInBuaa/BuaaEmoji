@@ -197,7 +197,7 @@ def build_dataset(is_train, args, folder_name=None):
         dataset = Pets(args.data_path, train=is_train, transform=transform)
         nb_classes = 37
     elif args.data_set == 'Emoji':
-        datasets = BuaaEmoji(args.data_path, train=is_train, transform=transform)
+        dataset = BuaaEmoji(args.data_path, train=is_train, transform=transform)
         nb_classes = 50
     elif args.data_set == 'FLOWERS':
         dataset = Flowers(args.data_path, train=is_train, transform=transform)
