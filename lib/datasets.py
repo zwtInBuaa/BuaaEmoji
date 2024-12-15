@@ -132,7 +132,7 @@ class BuaaEmoji(ImageFolder):
         else:
             with open(test_list_path, 'r') as f:
                 for line in f:
-                    img_name = line.split(' ')[0]
+                    img_name = line.strip()
                     # label = int(line.split(' ')[1])
                     # self.samples.append((os.path.join(root, 'test', img_name)))
                     self.samples.append((os.path.join(root, 'test', img_name), 1))

@@ -1,3 +1,4 @@
+import csv
 import math
 import sys
 from typing import Iterable, Optional
@@ -134,24 +135,38 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
     parameters = model_module.get_sampled_params_numel(config)
     print("sampled model parameters: {}".format(parameters))
 
-    for images, target in metric_logger.log_every(data_loader, 10, header):
-        images = images.to(device, non_blocking=True)
-        target = target.to(device, non_blocking=True)
-        # compute output
-        if amp:
-            with torch.cuda.amp.autocast():
+    with open('top1_predictions.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Image Name', 'Predicted Label'])
+
+        for images, target in metric_logger.log_every(data_loader, 10, header):
+            images = images.to(device, non_blocking=True)
+            target = target.to(device, non_blocking=True)
+            # compute output
+            if amp:
+                with torch.cuda.amp.autocast():
+                    output = model(images)
+                    loss = criterion(output, target)
+            else:
                 output = model(images)
                 loss = criterion(output, target)
-        else:
-            output = model(images)
-            loss = criterion(output, target)
 
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            # 获取 Top-1 分类结果
+            _, pred = output.topk(1, 1, True, True)
+            pred = pred.squeeze(1).cpu().numpy()
 
-        batch_size = images.shape[0]
-        metric_logger.update(loss=loss.item())
-        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+            # 获取图片名和预测标签并写入 CSV
+            for i in range(len(images)):
+                img_name = data_loader.dataset.samples[i][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
+                predicted_label = pred[i]
+                writer.writerow([img_name, predicted_label])
+
+            acc1, acc5 = accuracy(output, target, topk=(1, 5))
+
+            batch_size = images.shape[0]
+            metric_logger.update(loss=loss.item())
+            metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+            metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
