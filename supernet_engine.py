@@ -141,7 +141,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
     number = 0
     with open(output_csv_path, mode='w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(["ImageName", "Top1Class"])  # 写入表头
+        writer.writerow(["filename", "category"])  # 写入表头
 
         for images, target in metric_logger.log_every(data_loader, 10, header):
             images = images.to(device, non_blocking=True)
@@ -170,7 +170,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
             for i in range(len(images)):
                 img_name = data_loader.dataset.samples[number][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
                 predicted_label = pred[i]
-                writer.writerow([img_name, predicted_label])
+                writer.writerow([img_name, categories[predicted_label]])
                 number += 1
 
     # gather the stats from all processes
