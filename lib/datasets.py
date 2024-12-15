@@ -150,7 +150,7 @@ class BuaaEmojiTest(ImageFolder):
         with open(test_list_path, 'r') as f:
             for line in f:
                 img_name = line.strip()
-                self.samples.append((os.path.join(root, 'test', img_name), -1))
+                self.samples.append((os.path.join(root, 'test', img_name), 1))
 
 
 class INatDataset(ImageFolder):
