@@ -5,17 +5,17 @@ input_file = 'train.txt'  # 假设你的数据存储在这个文件中，每行�
 output_file_train = 'train_data.txt'
 output_file_test = 'test_data.txt'
 
-# 读取数据
+# 用于保存训练集和测试集的数据
+train_data = []
+test_data = []
+
+# 按行读取文件并随机抽取 25% 的行作为测试集
 with open(input_file, 'r') as f:
-    data = f.readlines()  # 读取每一行数据
-
-# 计算测试集大小 (25%)
-test_size = int(len(data) * 0.25)
-
-# 随机抽取 25% 的数据作为测试集
-random.shuffle(data)  # 打乱数据
-test_data = data[:test_size]  # 抽取前 25% 的数据作为测试集
-train_data = data[test_size:]  # 剩余的 75% 作为训练集
+    for line in f:
+        if random.random() < 0.25:  # 以 25% 的概率将该行放入测试集
+            test_data.append(line)
+        else:
+            train_data.append(line)
 
 # 保存到新文件
 with open(output_file_train, 'w') as f_train:
