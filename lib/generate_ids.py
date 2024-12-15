@@ -26,8 +26,8 @@ def generate_class_ids(dataset_root, output_file):
 
 
 # 设置数据集根目录和输出文件路径
-dataset_root = "../.data/Emoji/train"  # 数据集主目录
-output_file = "../.data/Emoji/train.txt"  # 输出文件
+dataset_root = "../data/Emoji/train"  # 数据集主目录
+output_file = "../data/Emoji/train.txt"  # 输出文件
 
 # 生成数据集信息
 generate_class_ids(dataset_root, output_file)
