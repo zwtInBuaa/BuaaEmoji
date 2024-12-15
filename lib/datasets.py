@@ -118,8 +118,8 @@ class BuaaEmoji(ImageFolder):
         self.loader = default_loader
         self.target_transform = None
         self.transform = transform
-        train_list_path = os.path.join(self.dataset_root, 'Emoji', 'train.txt')
-        test_list_path = os.path.join(self.dataset_root, 'Emoji', 'test.txt')
+        train_list_path = os.path.join(self.dataset_root, 'train.txt')
+        test_list_path = os.path.join(self.dataset_root, 'test.txt')
 
         self.samples = []
         if train:
