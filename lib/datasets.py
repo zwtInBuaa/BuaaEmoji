@@ -118,8 +118,8 @@ class BuaaEmoji(ImageFolder):
         self.loader = default_loader
         self.target_transform = None
         self.transform = transform
-        train_list_path = os.path.join(self.dataset_root, 'train.txt')
-        test_list_path = os.path.join(self.dataset_root, 'test.txt')
+        train_list_path = os.path.join(self.dataset_root, 'train_data.txt')
+        test_list_path = os.path.join(self.dataset_root, 'test_data.txt')
 
         self.samples = []
         if train:
@@ -132,10 +132,25 @@ class BuaaEmoji(ImageFolder):
         else:
             with open(test_list_path, 'r') as f:
                 for line in f:
-                    img_name = line.strip()
-                    # label = int(line.split(' ')[1])
-                    # self.samples.append((os.path.join(root, 'test', img_name)))
-                    self.samples.append((os.path.join(root, 'test', img_name), 1))
+                    img_name = line.split(' ')[0]
+                    category = line.split(' ')[1]
+                    label = int(line.split(' ')[2])
+                    self.samples.append((os.path.join(root, 'train', category, img_name), label))
+
+
+class BuaaEmojiTest(ImageFolder):
+    def __init__(self, root, train=False, transform=None, target_transform=None, **kwargs):
+        self.dataset_root = root
+        self.loader = default_loader
+        self.target_transform = None
+        self.transform = transform
+        test_list_path = os.path.join(self.dataset_root, 'test.txt')
+
+        self.samples = []
+        with open(test_list_path, 'r') as f:
+            for line in f:
+                img_name = line.strip()
+                self.samples.append((os.path.join(root, 'test', img_name), -1))
 
 
 class INatDataset(ImageFolder):
@@ -198,6 +213,9 @@ def build_dataset(is_train, args, folder_name=None):
         nb_classes = 37
     elif args.data_set == 'Emoji':
         dataset = BuaaEmoji(args.data_path, train=is_train, transform=transform)
+        nb_classes = 50
+    elif args.data_set == 'EmojiTest':
+        dataset = BuaaEmojiTest(args.data_path, train=is_train, transform=transform)
         nb_classes = 50
     elif args.data_set == 'FLOWERS':
         dataset = Flowers(args.data_path, train=is_train, transform=transform)

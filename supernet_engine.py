@@ -12,18 +12,19 @@ from lib import utils
 import random
 import time
 
-def sample_configs(choices):
 
+def sample_configs(choices):
     config = {}
     dimensions = ['mlp_ratio', 'num_heads']
     depth = random.choice(choices['depth'])
     for dimension in dimensions:
         config[dimension] = [random.choice(choices[dimension]) for _ in range(depth)]
 
-    config['embed_dim'] = [random.choice(choices['embed_dim'])]*depth
+    config['embed_dim'] = [random.choice(choices['embed_dim'])] * depth
 
     config['layer_num'] = depth
     return config
+
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -70,7 +71,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                         teach_output = teacher_model(samples)
                     _, teacher_label = teach_output.topk(1, 1, True, True)
                     outputs = model(samples)
-                    loss = 1/2 * criterion(outputs, targets) + 1/2 * teach_loss(outputs, teacher_label.squeeze())
+                    loss = 1 / 2 * criterion(outputs, targets) + 1 / 2 * teach_loss(outputs, teacher_label.squeeze())
                 else:
                     outputs = model(samples)
                     loss = criterion(outputs, targets)
@@ -96,7 +97,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if amp:
             is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
             loss_scaler(loss, optimizer, clip_grad=max_norm,
-                    parameters=model.parameters(), create_graph=is_second_order)
+                        parameters=model.parameters(), create_graph=is_second_order)
         else:
             loss.backward()
             optimizer.step()
@@ -112,6 +113,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+
 
 @torch.no_grad()
 def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', retrain_config=None):
@@ -131,16 +133,17 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
         model_module = unwrap_model(model)
         model_module.set_sample_config(config=config)
 
-
     print("sampled model config: {}".format(config))
     parameters = model_module.get_sampled_params_numel(config)
     print("sampled model parameters: {}".format(parameters))
 
-    with open('top1_predictions.csv', mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['Image Name', 'Predicted Label'])
+    output_csv_path = "prediction_results.csv"
+    number = 0
+    with open(output_csv_path, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["ImageName", "Top1Class"])  # 写入表头
 
-        for images, target in metric_logger.log_every(data_loader, 1, header):
+        for images, target in metric_logger.log_every(data_loader, 10, header):
             images = images.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             # compute output
@@ -152,25 +155,24 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
                 output = model(images)
                 loss = criterion(output, target)
 
-            # 获取 Top-1 分类结果
-            _, pred = output.topk(1, 1, True, True)
-            pred = pred.squeeze(1).cpu().numpy()
-
-            # print(images)
-            # print(output)
-
-            # 获取图片名和预测标签并写入 CSV
-            for i in range(len(images)):
-                img_name = data_loader.dataset.samples[i][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
-                predicted_label = categories[pred[i]]
-                writer.writerow([img_name, predicted_label])
-
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
             batch_size = images.shape[0]
             metric_logger.update(loss=loss.item())
             metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+
+            # 获取 Top-1 分类结果
+            _, pred = output.topk(1, 1, True, True)
+            pred = pred.squeeze(1).cpu().numpy()
+
+            # 获取图片名和预测标签并写入 CSV
+            for i in range(len(images)):
+                img_name = data_loader.dataset.samples[number][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
+                predicted_label = pred[i]
+                writer.writerow([img_name, predicted_label])
+                number += 1
+
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'

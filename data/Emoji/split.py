@@ -12,7 +12,7 @@ test_data = []
 # 按行读取文件并随机抽取 25% 的行作为测试集
 with open(input_file, 'r') as f:
     for line in f:
-        if random.random() < 0.25:  # 以 25% 的概率将该行放入测试集
+        if random.random() < 0.15:  # 以 15% 的概率将该行放入测试集
             test_data.append(line)
         else:
             train_data.append(line)

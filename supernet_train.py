@@ -26,7 +26,7 @@ def get_args_parser():
     parser.add_argument('--batch-size', default=64, type=int)
     parser.add_argument('--epochs', default=300, type=int)
     # config file
-    parser.add_argument('--cfg',help='experiment configure file name',required=True,type=str)
+    parser.add_argument('--cfg', help='experiment configure file name', required=True, type=str)
 
     # custom parameters
     parser.add_argument('--platform', default='pai', type=str, choices=['itp', 'pai', 'aml'],
@@ -36,7 +36,8 @@ def get_args_parser():
     parser.add_argument('--relative_position', action='store_true')
     parser.add_argument('--gp', action='store_true')
     parser.add_argument('--change_qkv', action='store_true')
-    parser.add_argument('--max_relative_position', type=int, default=14, help='max distance in relative position embedding')
+    parser.add_argument('--max_relative_position', type=int, default=14,
+                        help='max distance in relative position embedding')
 
     # Model parameters
     parser.add_argument('--model', default='', type=str, metavar='MODEL',
@@ -118,7 +119,6 @@ def get_args_parser():
     parser.add_argument('--repeated-aug', action='store_true')
     parser.add_argument('--no-repeated-aug', action='store_false', dest='repeated_aug')
 
-
     parser.set_defaults(repeated_aug=True)
 
     # * Random Erase params
@@ -148,7 +148,7 @@ def get_args_parser():
     # Dataset parameters
     parser.add_argument('--data-path', default='./data/imagenet/', type=str,
                         help='dataset path')
-    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR', 'IMNET', 'INAT', 'INAT19','Emoji'],
+    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR', 'IMNET', 'INAT', 'INAT19', 'Emoji'],
                         type=str, help='Image Net dataset path')
     parser.add_argument('--inat-category', default='name',
                         choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
@@ -180,11 +180,10 @@ def get_args_parser():
     parser.add_argument('--no-amp', action='store_false', dest='amp')
     parser.set_defaults(amp=True)
 
-
     return parser
 
-def main(args):
 
+def main(args):
     utils.init_distributed_mode(args)
     update_config_from_file(args.cfg)
 
@@ -201,6 +200,11 @@ def main(args):
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
     dataset_val, _ = build_dataset(is_train=False, args=args)
+    args.data_set = 'EmojiTest'
+    dataset_test, _ = build_dataset(is_train=False, args=args)
+    args.data_set = 'Emoji'
+
+    sampler_test = torch.utils.data.SequentialSampler(dataset_test)
 
     if args.distributed:
         num_tasks = utils.get_world_size()
@@ -241,6 +245,12 @@ def main(args):
         pin_memory=args.pin_mem, drop_last=False
     )
 
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, batch_size=int(2 * args.batch_size),
+        sampler=sampler_test, num_workers=args.num_workers,
+        pin_memory=args.pin_mem, drop_last=False
+    )
+
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
@@ -254,7 +264,7 @@ def main(args):
     model = Vision_TransformerSuper(img_size=args.input_size,
                                     patch_size=args.patch_size,
                                     embed_dim=cfg.SUPERNET.EMBED_DIM, depth=cfg.SUPERNET.DEPTH,
-                                    num_heads=cfg.SUPERNET.NUM_HEADS,mlp_ratio=cfg.SUPERNET.MLP_RATIO,
+                                    num_heads=cfg.SUPERNET.NUM_HEADS, mlp_ratio=cfg.SUPERNET.MLP_RATIO,
                                     qkv_bias=True, drop_rate=args.drop,
                                     drop_path_rate=args.drop_path,
                                     gp=args.gp,
@@ -264,7 +274,7 @@ def main(args):
                                     change_qkv=args.change_qkv, abs_pos=not args.no_abs_pos)
 
     choices = {'num_heads': cfg.SEARCH_SPACE.NUM_HEADS, 'mlp_ratio': cfg.SEARCH_SPACE.MLP_RATIO,
-               'embed_dim': cfg.SEARCH_SPACE.EMBED_DIM , 'depth': cfg.SEARCH_SPACE.DEPTH}
+               'embed_dim': cfg.SEARCH_SPACE.EMBED_DIM, 'depth': cfg.SEARCH_SPACE.DEPTH}
 
     model.to(device)
     if args.teacher_model:
@@ -283,7 +293,6 @@ def main(args):
 
     model_without_ddp = model
     if args.distributed:
-
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
 
@@ -331,13 +340,12 @@ def main(args):
 
     retrain_config = None
     if args.mode == 'retrain' and "RETRAIN" in cfg:
-        retrain_config = {'layer_num': cfg.RETRAIN.DEPTH, 'embed_dim': [cfg.RETRAIN.EMBED_DIM]*cfg.RETRAIN.DEPTH,
-                          'num_heads': cfg.RETRAIN.NUM_HEADS,'mlp_ratio': cfg.RETRAIN.MLP_RATIO}
+        retrain_config = {'layer_num': cfg.RETRAIN.DEPTH, 'embed_dim': [cfg.RETRAIN.EMBED_DIM] * cfg.RETRAIN.DEPTH,
+                          'num_heads': cfg.RETRAIN.NUM_HEADS, 'mlp_ratio': cfg.RETRAIN.MLP_RATIO}
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device,  mode = args.mode, retrain_config=retrain_config)
+        test_stats = evaluate(data_loader_test, model, device, mode=args.mode, retrain_config=retrain_config)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         return
-
 
     print("Start training")
     start_time = time.time()
@@ -353,7 +361,7 @@ def main(args):
             args.clip_grad, model_ema, mixup_fn,
             amp=args.amp, teacher_model=teacher_model,
             teach_loss=teacher_loss,
-            choices=choices, mode = args.mode, retrain_config=retrain_config,
+            choices=choices, mode=args.mode, retrain_config=retrain_config,
         )
 
         lr_scheduler.step(epoch)
@@ -370,7 +378,8 @@ def main(args):
                     'args': args,
                 }, checkpoint_path)
 
-        test_stats = evaluate(data_loader_val, model, device, amp=args.amp, choices=choices, mode = args.mode, retrain_config=retrain_config)
+        test_stats = evaluate(data_loader_val, model, device, amp=args.amp, choices=choices, mode=args.mode,
+                              retrain_config=retrain_config)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         max_accuracy = max(max_accuracy, test_stats["acc1"])
         print(f'Max accuracy: {max_accuracy:.2f}%')
