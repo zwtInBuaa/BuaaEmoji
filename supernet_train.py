@@ -197,7 +197,6 @@ def main(args):
     seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
-    # random.seed(seed)
     cudnn.benchmark = True
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
@@ -338,6 +337,7 @@ def main(args):
         test_stats = evaluate(data_loader_val, model, device,  mode = args.mode, retrain_config=retrain_config)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         return
+
 
     print("Start training")
     start_time = time.time()
