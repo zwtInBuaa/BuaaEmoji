@@ -156,6 +156,9 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
             _, pred = output.topk(1, 1, True, True)
             pred = pred.squeeze(1).cpu().numpy()
 
+            print(images)
+            print(output)
+
             # 获取图片名和预测标签并写入 CSV
             for i in range(len(images)):
                 img_name = data_loader.dataset.samples[i][0].split('/')[-1]  # 假设你的图片路径包含在 dataset.samples
