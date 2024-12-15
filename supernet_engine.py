@@ -140,7 +140,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
         writer = csv.writer(file)
         writer.writerow(['Image Name', 'Predicted Label'])
 
-        for images, target in metric_logger.log_every(data_loader, 10, header):
+        for images, target in metric_logger.log_every(data_loader, 1, header):
             images = images.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             # compute output
@@ -156,8 +156,8 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
             _, pred = output.topk(1, 1, True, True)
             pred = pred.squeeze(1).cpu().numpy()
 
-            print(images)
-            print(output)
+            # print(images)
+            # print(output)
 
             # 获取图片名和预测标签并写入 CSV
             for i in range(len(images)):
