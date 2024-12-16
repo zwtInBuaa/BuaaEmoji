@@ -116,7 +116,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
 @torch.no_grad()
-def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', retrain_config=None):
+def evaluate(epoch, data_loader, model, device, amp=True, choices=None, mode='super', retrain_config=None):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -137,7 +137,7 @@ def evaluate(data_loader, model, device, amp=True, choices=None, mode='super', r
     parameters = model_module.get_sampled_params_numel(config)
     print("sampled model parameters: {}".format(parameters))
 
-    output_csv_path = "submission.csv"
+    output_csv_path = "submission" + str(epoch) + ".csv"
     number = 0
     with open(output_csv_path, mode='w', newline='') as f:
         writer = csv.writer(f)
