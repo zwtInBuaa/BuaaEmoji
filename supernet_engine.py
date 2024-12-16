@@ -137,7 +137,7 @@ def evaluate(epoch, data_loader, model, device, amp=True, choices=None, mode='su
     parameters = model_module.get_sampled_params_numel(config)
     print("sampled model parameters: {}".format(parameters))
 
-    output_csv_path = "submission" + str(epoch) + ".csv"
+    output_csv_path = "result/submission" + str(epoch) + ".csv"
     number = 0
     with open(output_csv_path, mode='w', newline='') as f:
         writer = csv.writer(f)
